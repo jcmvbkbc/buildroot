@@ -4,11 +4,33 @@ choice
 	depends on BR2_xtensa
 
 config BR2_XTENSA_CUSTOM
-	bool "Custom Xtensa processor configuration"
+	bool "Custom Xtensa processor configuration using overlay"
+	help
+	  Overlay supplies source files that replace parts of the toolchain
+	  component source code customizing the toolchain for a specific
+	  xtensa configuration.
+
+config BR2_XTENSA_DYNCONFIG
+	bool "Dynamic Xtensa processor configuration"
+	help
+	  Starting with gcc-13 and binutils-2.40 the toolchain may be
+	  configured after it's built by pointing the environment variable
+	  XTENSA_GNU_CONFIG to a configuration-specific dynamic library.
+	  The project https://github.com/jcmvbkbc/xtensa-dynconfig may be
+	  used to build such library from the configuration overlay.
+
+	  Please note that dynamic configuration only applies to the host
+	  toolchain components, not to the target libraries like libgcc,
+	  libstdc++ or libc. Target libraries are always built for one
+	  specific configuration selected by XTENSA_GNU_CONFIG at the time
+	  of their build.
 
 config BR2_xtensa_fsf
 	bool "fsf - Default configuration"
 	select BR2_USE_MMU
+	help
+	  This architecture variant uses unmodified toolchain components
+	  and sets up endianness and MMU presence accordingly.
 
 endchoice
 
@@ -30,7 +52,7 @@ config BR2_XTENSA_OVERLAY_FILE
 choice
 	prompt "Target Architecture Endianness"
 	default BR2_XTENSA_LITTLE_ENDIAN
-	depends on BR2_XTENSA_CUSTOM
+	depends on BR2_XTENSA_CUSTOM || BR2_XTENSA_DYNCONFIG
 
 config BR2_XTENSA_LITTLE_ENDIAN
 	bool "Little endian"
@@ -43,7 +65,7 @@ endchoice
 config BR2_XTENSA_USE_MMU
 	bool "MMU support"
 	default y
-	depends on BR2_XTENSA_CUSTOM
+	depends on BR2_XTENSA_CUSTOM || BR2_XTENSA_DYNCONFIG
 	select BR2_USE_MMU
 	help
 	  Enable this option if your Xtensa core has a MMU (Memory
