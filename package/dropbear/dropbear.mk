@@ -103,7 +103,7 @@ define DROPBEAR_INSTALL_INIT_SYSTEMD
 		$(TARGET_DIR)/usr/lib/systemd/system/dropbear.service
 endef
 
-ifeq ($(BR2_USE_MMU),y)
+ifeq ($(BR2_USE_MMU),z)
 define DROPBEAR_INSTALL_INIT_SYSV
 	$(INSTALL) -D -m 755 package/dropbear/S50dropbear \
 		$(TARGET_DIR)/etc/init.d/S50dropbear
