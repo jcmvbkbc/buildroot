@@ -1,0 +1,26 @@
+From 437ccaa0a931f8adecfa1162a12bcde52d642ed8 Mon Sep 17 00:00:00 2001
+From: Max Filippov <jcmvbkbc@gmail.com>
+Date: Mon, 28 Mar 2022 20:48:05 -0700
+Subject: [PATCH 2/2] WIP: fix initial noMMU exec
+
+Signed-off-by: Max Filippov <jcmvbkbc@gmail.com>
+---
+ src/strace.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/strace.c b/src/strace.c
+index 94d6169db04e..a3de8ea93aa8 100644
+--- a/src/strace.c
++++ b/src/strace.c
+@@ -3679,7 +3679,7 @@ dispatch_event(const struct tcb_wait_data *wd)
+ 		 * and all the following syscall state tracking is screwed up
+ 		 * otherwise.
+ 		 */
+-		if (!maybe_switch_current_tcp() && entering(current_tcp)) {
++		if (!maybe_switch_current_tcp() && !NOMMU_SYSTEM && entering(current_tcp)) {
+ 			int ret;
+ 
+ 			error_msg("Stray PTRACE_EVENT_EXEC from pid %d"
+-- 
+2.30.2
+
