@@ -1,0 +1,30 @@
+--- dropbear-2022.83/src/svr-chansession.c	2022-11-14 06:30:00.000000000 -0800
++++ dropbear-2022.83-/src/svr-chansession.c	2023-07-27 16:36:26.324979994 -0700
+@@ -829,12 +829,6 @@
+ 	if (pid == 0) {
+ 		/* child */
+ 		
+-		TRACE(("back to normal sigchld"))
+-		/* Revert to normal sigchld handling */
+-		if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
+-			dropbear_exit("signal() error");
+-		}
+-		
+ 		/* redirect stdin/stdout/stderr */
+ 		close(chansess->master);
+ 
+--- dropbear-2022.83/src/dbutil.c	2022-11-14 06:30:00.000000000 -0800
++++ dropbear-2022.83-/src/dbutil.c	2023-07-27 16:49:16.520397242 -0700
+@@ -311,12 +311,6 @@
+ 	if (!pid) {
+ 		/* child */
+ 
+-		TRACE(("back to normal sigchld"))
+-		/* Revert to normal sigchld handling */
+-		if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
+-			dropbear_exit("signal() error");
+-		}
+-
+ 		/* redirect stdin/stdout */
+ 
+ 		if ((dup2(infds[FDIN], STDIN_FILENO) < 0) ||
