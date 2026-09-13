@@ -1,0 +1,72 @@
+From 4e7ff16837b554f97872899434696f7388b149a3 Mon Sep 17 00:00:00 2001
+From: Max Filippov <jcmvbkbc@gmail.com>
+Date: Sat, 12 Sep 2026 18:18:36 -0700
+Subject: [PATCH] xtensa: fix slow assembling of
+ gcc.c-torture/compile/limits-externalid
+
+next_frag_is_branch_target() is called in a loop for each frag may
+itself loop over frags until it either finds a branch target or a fixed
+frag, which may be as slow as O(N^2).
+Return the end of the range of checked frags from the
+next_frag_is_branch_target() and don't call this function more than once
+per range.
+This reduces assembly time of the gcc.c-torture/compile/limits-externalid
+from ~20 minutes to ~1 second.
+
+gas/
+	* config/tc-xtensa.c (next_frag_is_branch_target): Add parameter
+	'valid_until', return the address of the last checked frag in it.
+	(xtensa_fix_target_frags): Add variables 'valid_until' and
+	'is_branch_target' and track branch target status of the frag
+	range in them.
+---
+ gas/config/tc-xtensa.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/gas/config/tc-xtensa.c b/gas/config/tc-xtensa.c
+index 397744f742b7..c0b203839268 100644
+--- a/gas/config/tc-xtensa.c
++++ b/gas/config/tc-xtensa.c
+@@ -4740,12 +4740,13 @@ update_next_frag_state (fragS *fragP)
+ 
+ 
+ static bool
+-next_frag_is_branch_target (const fragS *fragP)
++next_frag_is_branch_target (const fragS *fragP, const fragS **valid_until)
+ {
+   /* Sometimes an empty will end up here due to storage allocation issues,
+      so we have to skip until we find something legit.  */
+   for (fragP = fragP->fr_next; fragP; fragP = fragP->fr_next)
+     {
++      *valid_until = fragP;
+       if (fragP->tc_frag_data.is_branch_target)
+ 	return true;
+       if (fragP->fr_fix != 0)
+@@ -8050,14 +8051,23 @@ xtensa_fix_target_frags (void)
+     for (frchP = seg_info (s)->frchainP; frchP; frchP = frchP->frch_next)
+       {
+ 	fragS *fragP;
++	const fragS *valid_until = NULL;
++	bool is_branch_target;
+ 
+ 	/* Walk over all of the fragments in a subsection.  */
+ 	for (fragP = frchP->frch_root; fragP; fragP = fragP->fr_next)
+ 	  {
++	    if (fragP == valid_until)
++	      valid_until = NULL;
++
+ 	    if (fragP->fr_type == rs_machine_dependent
+ 		&& fragP->fr_subtype == RELAX_DESIRE_ALIGN_IF_TARGET)
+ 	      {
+-		if (next_frag_is_branch_target (fragP))
++		if (!valid_until)
++		  is_branch_target = next_frag_is_branch_target (fragP,
++								 &valid_until);
++
++		if (is_branch_target)
+ 		  fragP->fr_subtype = RELAX_DESIRE_ALIGN;
+ 		else
+ 		  frag_wane (fragP);
+-- 
+2.47.3
+
